@@ -1,63 +1,67 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import './ReviewForm.css';
 
-const ReviewForm = ({ dealerId }) => {
+const ReviewForm = ({ dealerId, onReviewSubmit }) => {
   const [review, setReview] = useState('');
-  const [sentiment, setSentiment] = useState('Positive');
   const [purchaseDate, setPurchaseDate] = useState('');
   const [carMake, setCarMake] = useState('');
-  const [yearOfManufacture, setYearOfManufacture] = useState('');
+  const [year, setYear] = useState('');
+  const [sentiment, setSentiment] = useState('Positive');
+  const {id} = useParams();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    const userEmail = localStorage.getItem('userEmail');
     const newReview = {
       review,
-      sentiment,
       purchaseDate,
       carMake,
-      yearOfManufacture,
+      year: parseInt(year), 
+      sentiment,
+      user: userEmail,
+      dealerId: id
     };
 
+    console.log('Submitting review:', newReview);
+
     try {
-      await axios.post(`http://localhost:3001/api/reviews/${dealerId}`, newReview);
-      // Clear form after submission
-      setReview('');
-      setSentiment('Positive');
-      setPurchaseDate('');
-      setCarMake('');
-      setYearOfManufacture('');
-      // Optionally, you can fetch the reviews again to update the list
+      const response = await axios.post('http://localhost:3001/api/reviews', newReview);
+      console.log('Review submitted:', response.data);
+      alert('Review added successfully');
+      onReviewSubmit(newReview);
     } catch (error) {
       console.error('Error posting review:', error);
+      alert('Error posting review: ' + error.message);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="review-form" onSubmit={handleSubmit}>
       <div>
-        <label>Review:</label>
-        <textarea value={review} onChange={(e) => setReview(e.target.value)} required />
+        <label htmlFor="review">Review:</label>
+        <textarea id="review" value={review} onChange={(e) => setReview(e.target.value)} required />
       </div>
       <div>
-        <label>Sentiment:</label>
-        <select value={sentiment} onChange={(e) => setSentiment(e.target.value)} required>
+        <label htmlFor="purchaseDate">Purchase Date:</label>
+        <input type="date" id="purchaseDate" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} required />
+      </div>
+      <div>
+        <label htmlFor="carMake">Car Make:</label>
+        <input type="text" id="carMake" value={carMake} onChange={(e) => setCarMake(e.target.value)} required />
+      </div>
+      <div>
+        <label htmlFor="year">Year of Manufacture:</label>
+        <input type="number" id="year" value={year} onChange={(e) => setYear(e.target.value)} required />
+      </div>
+      <div>
+        <label htmlFor="sentiment">Sentiment:</label>
+        <select id="sentiment" value={sentiment} onChange={(e) => setSentiment(e.target.value)}>
           <option value="Positive">Positive</option>
           <option value="Neutral">Neutral</option>
           <option value="Negative">Negative</option>
         </select>
-      </div>
-      <div>
-        <label>Purchase Date:</label>
-        <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} required />
-      </div>
-      <div>
-        <label>Car Make:</label>
-        <input type="text" value={carMake} onChange={(e) => setCarMake(e.target.value)} required />
-      </div>
-      <div>
-        <label>Year of Manufacture:</label>
-        <input type="number" value={yearOfManufacture} onChange={(e) => setYearOfManufacture(e.target.value)} required />
       </div>
       <button type="submit">Submit Review</button>
     </form>

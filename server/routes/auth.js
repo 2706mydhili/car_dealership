@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
@@ -11,7 +12,6 @@ router.post('/register', async (req, res) => {
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
         }
-
         const user = new User({
             username,
             firstName,
@@ -28,24 +28,20 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ message: 'Invalid username or password' });
+            return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const isMatch = await user.matchPassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid username or password' });
+        if (password === user.password) {
+            return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: '1h',
-        });
 
-        res.json({ token, user: { username: user.username, email: user.email } });
+        res.json({user: { username: user.username, email: user.email } });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
